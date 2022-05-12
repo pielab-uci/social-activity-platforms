@@ -1,14 +1,8 @@
 # behance_retrieve_projects.py
-import concurrent.futures
 import behance_metadata
 import pandas as pd
-from scraper_api import ScraperAPIClient
 import time
 import re
-
-# API_KEY = '58dd4d4995c0fe4899b5d512d5c99a0f'
-# NUM_RETRIES = 2
-NUM_THREADS = 1
 
 def _form_row_as_list(project_dict):
     '''
@@ -26,9 +20,7 @@ def _scrape_behance_project(tweet_id, behance_link):
     formatted row of all the project data, otherwise, returns
     None if private or handled an unexpected exception
     '''
-    # Need to make sure this method actually works when we buy the APIscraper
-    #url = f'http://api.scraperapi.com?api_key={API_KEY}&url={behance_link}'
-    url = behance_link # have for testing before buying API subscription
+    url = behance_link
     if re.search(r'behance.net/gallery', url) == None:
         print(f'{behance_link} not valid link')
         return None
@@ -49,14 +41,8 @@ def retrieve_projects(df):
             'has_comments', 'comment_count', 'unique_comment_count', 'comments_retrieved_count',
             'comments','proejct_name', 'project_description', 'photos_count', 'username', 'followers_count']
 
-    executor_thread = concurrent.futures.ThreadPoolExecutor(max_workers = NUM_THREADS) # Use Threadpool to speed up data collection process
     behance_data_list = []
     
-
-    # for res in executor_thread.map(_scrape_behance_project, df['tweet_id'], df['behance_link']):
-    #     if res != None:
-    #       behance_data_list.append(res)
-    #     time.sleep(1)
     for index, row in df.iterrows():
         behance_project = _scrape_behance_project(row['tweet_id'], row['behance_link'])
         if behance_project != None:
@@ -66,8 +52,3 @@ def retrieve_projects(df):
     behance_projects = pd.DataFrame(behance_data_list, columns = cols)
     
     return behance_projects
-
-# behance_link = 'https://www.behance.net/gallery/139131411/GREEK-TECNIQUE-Tattoo-studio-Illustrative-design'
-# api_behance_link = f'http://api.scraperapi.com?api_key={API_KEY}&url={behance_link}&render=true'
-# project = _scrape_behance_project(1, api_behance_link)
-# print(project)

@@ -46,7 +46,7 @@ def retrieve_shots(df, filenum):
     count = 1
     hitRateLimit = False
     for index, row in df.iterrows():
-        print(f'{count}:', end=' ')
+        print(f'{count} in dribbble_tweets{filenum}:', end=' ')
         dribbble_shot= _scrape_dribbble_shot(row['tweet_id'], row['dribbble_link'])
         if dribbble_shot == -1:
             hitRateLimit = True

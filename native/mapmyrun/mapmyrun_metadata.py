@@ -17,6 +17,9 @@ ACCOUNT_QUEUE.put(EMAIL_AND_PASS1)
 ACCOUNT_QUEUE.put(EMAIL_AND_PASS2)
 ACCOUNT_QUEUE.put(EMAIL_AND_PASS3)
 
+class LoginError(Exception):
+    pass
+
 async def get_page(browser, url):
     page = await browser.newPage()
     await page.goto(url)
@@ -32,7 +35,7 @@ def close_browser(browser):
 async def _login():
     email_and_pass = ACCOUNT_QUEUE.get() # grab least recently used account
     try:
-        browser = await launch(headless = True, args = ["--no-sandbox"])
+        browser = await launch(headless = True) # got rid of , args = ["--no-sandbox"]
         
         login_page = await get_page(browser, MYMAPRUN_LOGIN_PAGE)
 
@@ -56,10 +59,13 @@ async def _login():
 
         await login_page.waitFor(800)
         await login_page.screenshot({'path': 'postNavLoginScreen.png', 'fullPage':True}) # You should see the workout calender for the account you logged into
-        return browser, email_and_pass['email']
+
+        email = email_and_pass['email']
+        print(f'LOGIN SUCCESSFUL with {email}')
+        return browser
     except Exception as e:
-        print(e)
-        return None, email_and_pass['email']
+        email = email_and_pass['email']
+        raise LoginError(f'LOGIN UNSUCCESSFUL with {email}')
 
 def get_login_browser():
     loop = asyncio.get_event_loop()
@@ -68,6 +74,7 @@ def get_login_browser():
 
 async def _get_workout_id(mymaprun_link):
     workout_id = re.search('mapmyrun.com/workout/(\d+)', mymaprun_link)
+    # print(f'\tworkout_id: {workout_id}')
     return workout_id.group(1)
 
 async def _get_workout_title(page):
@@ -77,15 +84,18 @@ async def _get_workout_title(page):
         title_elem = await page.querySelector('h4[class*="jss327"]')
         descrip_jss = 329
     title = await page.evaluate('(title_elem) => title_elem.innerText', title_elem)
+    # print(f'\ttitle: {title}')
     return title, descrip_jss
 
 async def _get_workout_description(page, descrip_jss):
     selector_str = f'p[class*="jss{descrip_jss}"]'
     description_elem = await page.querySelector(selector_str)
     if description_elem == None:
+        # print(f'\thas no description')
         return '' # No description, return empty string
     else:
         description = await page.evaluate('(description_elem) => description_elem.innerText', description_elem)
+        # print(f'\tdescription: {description}')
         return description
 
 async def _get_like_count(page):
@@ -103,13 +113,14 @@ async def _get_like_count(page):
             else:
                like_elem = None 
     commemt_jss = jss + 3 # like and comment always 3 apart
-    
+    # print(f'\tlike count: {like_count}')
     return int(like_count), commemt_jss
 
 async def _get_comment_count(page, comment_jss):
     selector_str = f'div[class*="jss{comment_jss}"]'
     comment_elem = await page.querySelector(selector_str)
     comment_count = await page.evaluate('(comment_elem) => comment_elem.innerText', comment_elem)
+    # print(f'\tcomment count: {comment_count}')
     return int(comment_count)
 
 async def _get_date_published(page, date_jss):
@@ -124,11 +135,10 @@ async def _get_date_published(page, date_jss):
         selector_str = f'p[class*="jss{date_jss}"]'
         date_elem = await page.querySelector(selector_str)
     date = await page.evaluate('(date_elem) => date_elem.innerText', date_elem)
+    # print(f'\tdate: {date}')
     return date
 
 async def _get_userId(page):
-    # jss124 a get attribute value of href
-    # then use re to parse out userId
     user_elem = None
     jss = 416
     while user_elem == None and jss != 422:
@@ -139,8 +149,10 @@ async def _get_userId(page):
     try:
         user_profile = await page.evaluate('(user_elem) => user_elem.getAttribute("href")', user_elem)
     except Exception as e:
+        # print(f'\thas no userId')
         return np.NaN, None # handles if UserId does not exist
     user_id = re.search('/profile/(\d+)', user_profile).group(1)
+    # print(f'\tuser_id: {user_id}')
     return user_id, datePosted_jss
 
 async def _get_photos_count(page):
@@ -149,7 +161,7 @@ async def _get_photos_count(page):
         photos_elems = await page.querySelectorAll('img[class*="jss434"]')
         return photos_elems
     photos_elems = await page.querySelectorAll('img[class*="jss435"]')
-
+    # print(f'\tphotos_count: {len(photos_elems)}')
     return len(photos_elems)
 
 async def _get_workout_data(mymaprun_link, browser):

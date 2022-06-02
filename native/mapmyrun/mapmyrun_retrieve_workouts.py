@@ -3,9 +3,6 @@ import mapmyrun_metadata
 import pandas as pd
 import time
 
-class LoginError(Exception):
-    pass
-
 def _form_row_as_list(workout_dict):
     '''
     Returns the given workout dict as a list 
@@ -40,13 +37,8 @@ def retrieve_workouts(df, file_num):
 
     mymaprun_data_list = []
 
-    browser, email = mapmyrun_metadata.get_login_browser()
+    browser = mapmyrun_metadata.get_login_browser()
 
-    if browser != None:
-        print(f'LOGIN SUCCESSFUL with {email}')
-    else:
-        raise LoginError(f'LOGIN UNSUCCESSFUL with {email}')
-    
     count = 1
     try:
         for index, row in df.iterrows():
@@ -55,10 +47,15 @@ def retrieve_workouts(df, file_num):
             if mapmyrun_workout != None:
                 mymaprun_data_list.append(mapmyrun_workout)
             time.sleep(1)
+            if count % 500 == 0 and count != 2000: # relogin and open a new broser every 500 links
+                mapmyrun_metadata.close_browser(browser)
+                browser = mapmyrun_metadata.get_login_browser()
             count += 1
+
+        mapmyrun_metadata.close_browser(browser)
     except Exception as e:
         print(e)
-        print('saving file...')
+        print(f'saving mapmyrun_tweets{file_num} up to count {count}...')
     finally:
         mymaprun_workouts = pd.DataFrame(mymaprun_data_list, columns = cols)
         

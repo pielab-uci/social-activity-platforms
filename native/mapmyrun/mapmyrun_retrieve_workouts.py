@@ -46,7 +46,7 @@ def retrieve_workouts(df, file_num):
             mapmyrun_workout = _scrape_mymaprun_workout(row['tweet_id'], row['mapmyrun_link'], browser)
             if mapmyrun_workout != None:
                 mymaprun_data_list.append(mapmyrun_workout)
-            time.sleep(1)
+            time.sleep(.5)
             if count % 500 == 0 and count != 2000: # relogin and open a new broser every 500 links
                 mapmyrun_metadata.close_browser(browser)
                 browser = mapmyrun_metadata.get_login_browser()

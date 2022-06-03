@@ -10,8 +10,24 @@ import time
 async def get_page(browser, url):
     '''Returns a new page of the given url'''
     page = await browser.newPage()
-    await page.goto(url, timeout=80000)
+    await page.goto(url)
     return page
+
+async def _close_browser(browser):
+    await browser.close()
+
+def close_browser(browser):
+    loop = asyncio.get_event_loop()
+    login_browser = loop.run_until_complete(_close_browser(browser))
+
+async def _get_browser():
+    browser = await launch(headless = True)
+    return browser
+
+def get_browser():
+    loop = asyncio.get_event_loop()
+    login_browser = loop.run_until_complete(_get_browser())
+    return login_browser
 
 async def get_comment_dict(page, comment):
     '''
@@ -135,15 +151,13 @@ async def _get_main_shot_data(page):
     
 #     return int(followersCount.replace(',', ''))
 
-async def _get_shot_data(dribbble_link):
+async def _get_shot_data(dribbble_link, browser):
     '''
     If dribbble_link leads to public shot, returns a dictionary
     with all the shot data, otherwise, returns
     None if private or handled an unexpected exception
     '''
-    browser = await launch({"handleSIGINT": False,
-            "handleSIGTERM": False,
-            "handleSIGHUP": False})
+    # browser = await launch()
 
     page = await get_page(browser, dribbble_link)
     shot_data = await _get_main_shot_data(page)
@@ -153,8 +167,10 @@ async def _get_shot_data(dribbble_link):
         titleElem = await page.querySelector('title')
         titleText = await page.evaluate('(titleElem) => titleElem.innerText', titleElem)
         if titleText == "Dribbble - You've been rate limited":
+            await page.close()
             return -1 # return -1 to signal that we hit the rate limit
         print(f'{dribbble_link} is not valid or public dribbble shot page')
+        await page.close()
         return None
     shot_data['photos_count'] = await _get_photos_count(page)
     shot_data['description'] = await _get_shot_description(page)
@@ -163,11 +179,12 @@ async def _get_shot_data(dribbble_link):
     # shot_data['followers_count'] = await _get_followers_count(page)
     """Uncomment to get followers count by by going straight to about page"""
     # shot_data['followers_count'] = await _get_followers_count(browser, shot_data['username'])
-    await browser.close()
+
+    await page.close()
+    # await browser.close()
     return shot_data
 
-
-def get_dibbble_shot(tweet_id, dribbble_link):
+def get_dribbble_shot(tweet_id, dribbble_link, browser):
     '''
     Returns the shot as a dictionary of 
     its info if public. Returns None if 
@@ -176,7 +193,7 @@ def get_dibbble_shot(tweet_id, dribbble_link):
     '''
     try:
         loop = asyncio.get_event_loop()
-        shot = loop.run_until_complete(_get_shot_data(dribbble_link))
+        shot = loop.run_until_complete(_get_shot_data(dribbble_link, browser))
         return shot
     except Exception as e:
         print(f'tweet_id [{tweet_id}] with link [{dribbble_link}] caused exception: {e}')

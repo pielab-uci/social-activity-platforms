@@ -13,7 +13,7 @@ def _form_row_as_list(shot_dict):
             0 if shot_dict['commentsCount'] == 0 else 1, shot_dict['commentsCount'], len(shot_dict['comments']), shot_dict['num_comments_retrieved'],
             shot_dict['comments'], shot_dict['title'], shot_dict['description'], shot_dict['photos_count'], shot_dict['shotUser'], shot_dict['username']] # add shot_dict['followers_count'] to the end to add followers count
 
-def _scrape_dribbble_shot(tweet_id, dribbble_link):
+def _scrape_dribbble_shot(tweet_id, dribbble_link, browser):
     '''
     If dribbble link leads to public shot, returns the list 
     formatted row of all the shot data, otherwise, returns
@@ -23,7 +23,7 @@ def _scrape_dribbble_shot(tweet_id, dribbble_link):
     if url == None:
         print(f'{dribbble_link} not a valid dribbble link')
         return None
-    shot = dribbble_metadata.get_dibbble_shot(tweet_id, url.group(0))
+    shot = dribbble_metadata.get_dribbble_shot(tweet_id, url.group(0), browser)
     if shot != None and shot != -1:
         print(f'{dribbble_link} scraped successfully')
         row = [tweet_id, dribbble_link] + _form_row_as_list(shot)
@@ -43,11 +43,13 @@ def retrieve_shots(df, filenum):
 
     dribbble_shot_data_list = []
     
+    browser = dribbble_metadata.get_browser()
     count = 1
     hitRateLimit = False
+
     for index, row in df.iterrows():
-        print(f'{count} in dribbble_tweets{filenum}:', end=' ')
-        dribbble_shot= _scrape_dribbble_shot(row['tweet_id'], row['dribbble_link'])
+        print(f'{count} in file dribbble_tweets{filenum}:', end=' ')
+        dribbble_shot= _scrape_dribbble_shot(row['tweet_id'], row['dribbble_link'], browser)
         if dribbble_shot == -1:
             hitRateLimit = True
             print(f'hit rate limit at count {count} with url {row["dribbble_link"]}')

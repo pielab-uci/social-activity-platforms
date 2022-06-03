@@ -8,6 +8,7 @@ import queue
 
 MYMAPRUN_LOGIN_PAGE = 'https://www.mapmyrun.com/auth/login/'
 
+
 EMAIL_AND_PASS1 = {'email': 'ENTER EMAIL HERE', 'password': 'ENTER PASSWORD HERE'}
 EMAIL_AND_PASS2 = {'email': 'ENTER EMAIL HERE', 'password': 'ENTER PASSWORD HERE'}
 EMAIL_AND_PASS3 = {'email': 'ENTER EMAIL HERE', 'password': 'ENTER PASSWORD HERE'}
@@ -35,7 +36,7 @@ def close_browser(browser):
 async def _login():
     email_and_pass = ACCOUNT_QUEUE.get() # grab least recently used account
     try:
-        browser = await launch(headless = True) # got rid of , args = ["--no-sandbox"]
+        browser = await launch(headless = True)
         
         login_page = await get_page(browser, MYMAPRUN_LOGIN_PAGE)
 
@@ -63,8 +64,10 @@ async def _login():
         email = email_and_pass['email']
         print(f'LOGIN SUCCESSFUL with {email}')
         return browser
+        # await browser.close()
     except Exception as e:
         email = email_and_pass['email']
+
         raise LoginError(f'LOGIN UNSUCCESSFUL with {email}')
 
 def get_login_browser():
@@ -170,11 +173,13 @@ async def _get_workout_data(mymaprun_link, browser):
     with all the project data, otherwise, returns
     None if private or handled an unexpected exception
     '''
+    
     workout_page = await get_page(browser, mymaprun_link)
 
     try:
         await workout_page.waitForSelector('div[class^="MuiCardContent-root"]', {'visible': True, 'timeout': 4000}) # wait 4 seconds
     except:
+        await workout_page.close()
         print(f'{mymaprun_link} is private or not found')
         return None
 
@@ -189,6 +194,7 @@ async def _get_workout_data(mymaprun_link, browser):
 
     workout_data['photosCount'] = await _get_photos_count(workout_page)
 
+    await workout_page.close() # close each workoutpage to save memory
     return workout_data
 
 def get_mymaprun_workout(tweet_id, mymaprun_link, browser):

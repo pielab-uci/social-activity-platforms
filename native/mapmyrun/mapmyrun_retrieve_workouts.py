@@ -47,7 +47,7 @@ def retrieve_workouts(df, file_num):
             if mapmyrun_workout != None:
                 mymaprun_data_list.append(mapmyrun_workout)
             time.sleep(.5)
-            if count % 500 == 0 and count != 2000: # relogin and open a new broser every 500 links
+            if count % 1000 == 0 and count != 2000: # relogin and open a new broser every 500 links
                 mapmyrun_metadata.close_browser(browser)
                 browser = mapmyrun_metadata.get_login_browser()
             count += 1

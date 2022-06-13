@@ -31,4 +31,6 @@ for filename in os.listdir(directory):
     # Create behance_tweets[file_num].csv
     updated_mymaprun_tweets.to_csv(f'MapMyRun Tweets/mapmyrun_tweets{file_num}.csv')
 
+    # Deleted completed file
+    os.remove(full_path)
     print(f'=== FINISHED WITH {filename} ===')

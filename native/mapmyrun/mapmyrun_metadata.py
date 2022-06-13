@@ -12,11 +12,15 @@ MYMAPRUN_LOGIN_PAGE = 'https://www.mapmyrun.com/auth/login/'
 EMAIL_AND_PASS1 = {'email': 'ENTER EMAIL HERE', 'password': 'ENTER PASSWORD HERE'}
 EMAIL_AND_PASS2 = {'email': 'ENTER EMAIL HERE', 'password': 'ENTER PASSWORD HERE'}
 EMAIL_AND_PASS3 = {'email': 'ENTER EMAIL HERE', 'password': 'ENTER PASSWORD HERE'}
+EMAIL_AND_PASS4 = {'email': 'ENTER EMAIL HERE', 'password': 'ENTER PASSWORD HERE'}
+EMAIL_AND_PASS5 = {'email': 'ENTER EMAIL HERE', 'password': 'ENTER PASSWORD HERE'}
 
 ACCOUNT_QUEUE = queue.SimpleQueue()
 ACCOUNT_QUEUE.put(EMAIL_AND_PASS1)
 ACCOUNT_QUEUE.put(EMAIL_AND_PASS2)
 ACCOUNT_QUEUE.put(EMAIL_AND_PASS3)
+ACCOUNT_QUEUE.put(EMAIL_AND_PASS4)
+ACCOUNT_QUEUE.put(EMAIL_AND_PASS5)
 
 class LoginError(Exception):
     pass
@@ -64,10 +68,9 @@ async def _login():
         email = email_and_pass['email']
         print(f'LOGIN SUCCESSFUL with {email}')
         return browser
-        # await browser.close()
+        
     except Exception as e:
         email = email_and_pass['email']
-
         raise LoginError(f'LOGIN UNSUCCESSFUL with {email}')
 
 def get_login_browser():
@@ -77,15 +80,15 @@ def get_login_browser():
 
 async def _get_workout_id(mymaprun_link):
     workout_id = re.search('mapmyrun.com/workout/(\d+)', mymaprun_link)
-    # print(f'\tworkout_id: {workout_id}')
+    # print(f'\tworkout_id: {workout_id.group(1)}')
     return workout_id.group(1)
 
 async def _get_workout_title(page):
-    title_elem = await page.querySelector('h4[class*="jss326"]')
-    descrip_jss = 328 # description and title always 2 apart
+    title_elem = await page.querySelector('h4[class*="jss336"]')
+    descrip_jss = 338 # description and title always 2 apart
     if title_elem == None:
-        title_elem = await page.querySelector('h4[class*="jss327"]')
-        descrip_jss = 329
+        title_elem = await page.querySelector('h4[class*="jss338"]')
+        descrip_jss = 340
     title = await page.evaluate('(title_elem) => title_elem.innerText', title_elem)
     # print(f'\ttitle: {title}')
     return title, descrip_jss
@@ -101,36 +104,11 @@ async def _get_workout_description(page, descrip_jss):
         # print(f'\tdescription: {description}')
         return description
 
-async def _get_like_count(page):
-    jss = 440
-    like_elem = None
-    like_count = None
-    while like_elem == None and jss != 447:
-        jss += 1
-        selector_str = f'div[class*="jss{jss}"]'
-        like_elem = await page.querySelector(selector_str)
-        if like_elem != None:
-            like_count = await page.evaluate('(like_elem) => like_elem.innerText', like_elem)
-            if like_count.isnumeric():
-                break
-            else:
-               like_elem = None 
-    commemt_jss = jss + 3 # like and comment always 3 apart
-    # print(f'\tlike count: {like_count}')
-    return int(like_count), commemt_jss
-
-async def _get_comment_count(page, comment_jss):
-    selector_str = f'div[class*="jss{comment_jss}"]'
-    comment_elem = await page.querySelector(selector_str)
-    comment_count = await page.evaluate('(comment_elem) => comment_elem.innerText', comment_elem)
-    # print(f'\tcomment count: {comment_count}')
-    return int(comment_count)
-
 async def _get_date_published(page, date_jss):
     if date_jss == None: # there was no userId to base this off
         date_elem = None
-        jss = 414
-        while date_elem == None and jss != 422:
+        jss = 434
+        while date_elem == None and jss != 444:
             jss += 1
             selector_str = f'p[class*="jss{jss}"]'
             date_elem = await page.querySelector(selector_str)
@@ -143,8 +121,8 @@ async def _get_date_published(page, date_jss):
 
 async def _get_userId(page):
     user_elem = None
-    jss = 416
-    while user_elem == None and jss != 422:
+    jss = 436
+    while user_elem == None and jss != 439:
         jss += 1
         selector_str = f'a[class*="jss{jss}"]'
         user_elem = await page.querySelector(selector_str)
@@ -159,13 +137,32 @@ async def _get_userId(page):
     return user_id, datePosted_jss
 
 async def _get_photos_count(page):
-    photo_jss_check = await page.querySelector('img[class*="jss434"]')
+    photo_jss_check = await page.querySelector('img[class*="jss453"]')
     if photo_jss_check != None:
-        photos_elems = await page.querySelectorAll('img[class*="jss434"]')
+        photos_elems = await page.querySelectorAll('img[class*="jss453"]')
         return photos_elems
-    photos_elems = await page.querySelectorAll('img[class*="jss435"]')
+    photos_elems = await page.querySelectorAll('img[class*="jss455"]')
     # print(f'\tphotos_count: {len(photos_elems)}')
     return len(photos_elems)
+
+async def _get_like_and_comment_count(page):
+    jss = 457
+    like_and_comment_elem = None
+    while like_and_comment_elem == None and jss != 463:
+        jss += 1
+        selector_str = f'div[class*="jss{jss}"]'
+        like_and_comment_elem = await page.querySelector(selector_str)
+        if like_and_comment_elem != None:
+            like_comment_str = await page.evaluate('(like_and_comment_elem) => like_and_comment_elem.innerText', like_and_comment_elem)
+            match = re.search('(\d+)\n•\n(\d+)', like_comment_str)
+            if match != None:
+                like_count = match.group(1)
+                # print(f'\tlike count: {like_count}')
+                comment_count = match.group(2)
+                # print(f'\tcomment count: {comment_count}')
+                return like_count, comment_count
+            like_and_comment_elem = None
+
 
 async def _get_workout_data(mymaprun_link, browser):
     '''
@@ -179,20 +176,27 @@ async def _get_workout_data(mymaprun_link, browser):
     try:
         await workout_page.waitForSelector('div[class^="MuiCardContent-root"]', {'visible': True, 'timeout': 4000}) # wait 4 seconds
     except:
-        await workout_page.close()
+        
         print(f'{mymaprun_link} is private or not found')
         return None
+
+
+    workout = await workout_page.querySelector('div[class^="MuiCardContent-root"]')
+    html = await workout_page.evaluate('(workout) => workout.innerHTML', workout)
 
     workout_data = dict()
     workout_data['workoutId'] = await _get_workout_id(mymaprun_link)
     workout_data['workoutTitle'], descrip_jss = await _get_workout_title(workout_page)
     workout_data['workoutDescription']  = await _get_workout_description(workout_page, descrip_jss)
-    workout_data['likeCount'], comment_jss = await _get_like_count(workout_page)
-    workout_data['commentCount'] = await _get_comment_count(workout_page, comment_jss)
+
+    workout_data['likeCount'], workout_data['commentCount'] = await _get_like_and_comment_count(workout_page)
+
     workout_data['userId'], pubDate_jss = await _get_userId(workout_page)
     workout_data['pusblishDate'] = await _get_date_published(workout_page, pubDate_jss)
 
     workout_data['photosCount'] = await _get_photos_count(workout_page)
+
+    
 
     await workout_page.close() # close each workoutpage to save memory
     return workout_data

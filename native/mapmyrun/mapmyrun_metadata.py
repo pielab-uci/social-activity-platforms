@@ -129,7 +129,7 @@ async def _get_date_published(page, date_jss):
 async def _get_userId(page):
     user_elem = None
     jss = 436
-    while user_elem == None and jss != 439:
+    while user_elem == None and jss != 441:
         jss += 1
         selector_str = f'a[class*="jss{jss}"]'
         user_elem = await page.querySelector(selector_str)
@@ -172,7 +172,7 @@ async def _get_like_and_comment_count(page):
                 comment_count = match.group(2)
                 if DEBUG:
                     print(f'\tcomment count: {comment_count}')
-                return like_count, comment_count
+                return int(like_count), int(comment_count)
             like_and_comment_elem = None
 
 

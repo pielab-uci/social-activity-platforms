@@ -87,11 +87,11 @@ async def _get_workout_id(mymaprun_link):
     return workout_id.group(1)
 
 async def _get_workout_title(page):
-    title_elem = await page.querySelector('h4[class*="jss336"]')
-    descrip_jss = 338 # description and title always 2 apart
+    title_elem = await page.querySelector('h4[class*="jss340"]')
+    descrip_jss = 342 # description and title always 2 apart
     if title_elem == None:
-        title_elem = await page.querySelector('h4[class*="jss338"]')
-        descrip_jss = 340
+        title_elem = await page.querySelector('h4[class*="jss342"]')
+        descrip_jss = 344
     title = await page.evaluate('(title_elem) => title_elem.innerText', title_elem)
     if DEBUG:
         print(f'\ttitle: {title}')
@@ -113,8 +113,8 @@ async def _get_workout_description(page, descrip_jss):
 async def _get_date_published(page, date_jss):
     if date_jss == None: # there was no userId to base this off
         date_elem = None
-        jss = 434
-        while date_elem == None and jss != 444:
+        jss = 441
+        while date_elem == None and jss != 445:
             jss += 1
             selector_str = f'p[class*="jss{jss}"]'
             date_elem = await page.querySelector(selector_str)
@@ -128,8 +128,8 @@ async def _get_date_published(page, date_jss):
 
 async def _get_userId(page):
     user_elem = None
-    jss = 436
-    while user_elem == None and jss != 441:
+    jss = 437
+    while user_elem == None and jss != 443:
         jss += 1
         selector_str = f'a[class*="jss{jss}"]'
         user_elem = await page.querySelector(selector_str)
@@ -146,11 +146,11 @@ async def _get_userId(page):
     return user_id, datePosted_jss
 
 async def _get_photos_count(page):
-    photo_jss_check = await page.querySelector('img[class*="jss453"]')
+    photo_jss_check = await page.querySelector('img[class*="jss457"]')
     if photo_jss_check != None:
-        photos_elems = await page.querySelectorAll('img[class*="jss453"]')
+        photos_elems = await page.querySelectorAll('img[class*="jss457"]')
         return photos_elems
-    photos_elems = await page.querySelectorAll('img[class*="jss455"]')
+    photos_elems = await page.querySelectorAll('img[class*="jss459"]')
     if DEBUG:
         print(f'\tphotos_count: {len(photos_elems)}')
     return len(photos_elems)
@@ -186,7 +186,7 @@ async def _get_workout_data(mymaprun_link, browser):
     workout_page = await get_page(browser, mymaprun_link)
 
     try:
-        await workout_page.waitForSelector('div[class^="MuiCardContent-root"]', {'visible': True, 'timeout': 4000}) # wait 4 seconds
+        await workout_page.waitForSelector('div[class^="MuiCardContent-root"]', {'visible': True, 'timeout': 6000}) # wait 4 seconds
     except:
         print(f'{mymaprun_link} is private or not found')
         return None

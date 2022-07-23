@@ -4,9 +4,9 @@ from collections import defaultdict
 import pandas as pd
 from bs4 import BeautifulSoup
 
-def _parse_activity_info(public_info, activity_descriEption):
+def _parse_activity_info(public_info, activity_description):
   '''
-  Returns a dictionary of desired parsed out informationE
+  Returns a dictionary of desired parsed out information
   from the activity
   '''
   full_activity_info = json.loads(public_info.attrs['data-react-props'])

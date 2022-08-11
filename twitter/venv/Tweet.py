@@ -8,16 +8,25 @@ class Tweet:
         self.text = tweet_record[3]
         self.author_id = tweet_record[4]
         self.conversation_id = tweet_record[5]
-        self.created_at = tweet_record[6]
+        self.strava_url = tweet_record[6]
         self.media_count = tweet_record[7]
-        self.public_metrics = tweet_record[8]
-        self.entities = tweet_record[10]
+        self.public_metrics = dict(json.loads(tweet_record[9].replace("'", "\"")))
+        self.entities = dict(json.loads(tweet_record[10].replace("'", "\"")))
+        # self.reply = tweet_record[12]
 
     def __repr__(self):
         return 'Tweet {}'.format(self.created_at)
 
+    def has_replies(self):
+        if self.public_metrics['reply_count'] > 0:
+            return 1
+        return 0
+
     def get_text(self):
         return self.text
+
+    def get_strava_url(self):
+        return self.strava_url
 
     def get_created_at(self):
         return datetime.fromisoformat(self.created_at[:-1])
@@ -35,13 +44,16 @@ class Tweet:
         return self.media_count
 
     def get_id(self):
-        return self.tweet_id
+        return int(self.tweet_id)
 
     def get_entities(self):
         return self.entities
 
     def get_reply_count(self):
         return self.public_metrics['reply_count']
+
+    def get_like_count(self):
+        return self.public_metrics['like_count']
 
     def get_public_metrics(self):
         return self.public_metrics
@@ -63,7 +75,7 @@ class Tweet:
                 for i in range(5):
                     url_t += url.split('/')[i] + '/'
                 if len(url_t) > 42:
-                    url_t = url_t[0:42]
+                    url_t = url_t[0:44]
                 return url_t[:-1]
             return url
         except json.decoder.JSONDecodeError:

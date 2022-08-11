@@ -7,12 +7,13 @@ import collection_analysis
 
 
 def conv_collection_loop(conv_ids: set):
-    #in case of error, replace 0 with the latest collected index found in console printout
+    #In case of error, replace 0 with the latest collected index found in console printout
     for id in conv_ids[0:]:
         print(id, conv_ids.index(id))
         time.sleep(1.1)
         current_token = config.BEARER_TOKEN_DANIEL
-        with open('/Users/mykytaturpitka/Desktop/PIE_Lab/Strava conversations/{}.json'.format(id), 'w+') as f:
+        #Specify the directory to store the conversations in the string below
+        with open('/Users/mykytaturpitka/Desktop/PIE_Lab/MMR conversations/{}.json'.format(id), 'w+') as f:
             json.dump(make_conv_request(id, current_token), f)
             print('done')
 
@@ -29,13 +30,12 @@ def make_conv_request(id, token):
         else:
             headers = {"Authorization": "Bearer {}".format(config.BEARER_TOKEN_DANIEL)}
             print('switching tokens')
-        # print('Rate limit exhausted, pausing for 15 minutes')
-        # time.sleep(900)
         response = requests.request("GET", url, headers=headers)
     return response.json()
 
 
 if __name__ == '__main__':
+    #Specify the directory with the .csv files below
     directory = r'/Users/mykytaturpitka/Desktop/PIE_Lab/MapMyRun/'
 
     united_df = collection_analysis.united_dataframe(directory)
